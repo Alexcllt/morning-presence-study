@@ -1,1 +1,81 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Morning Presence Study 2026</title><link rel="stylesheet" href="styles.css"></head><body><main class="shell"><nav><b>MPS / 26</b><label><span id="languageLabel"></span><select id="languageSelect"><option value="fr">FR</option><option value="en">EN</option><option value="de">DE</option><option value="es">ES</option><option value="it">IT</option></select></label></nav><section id="landing" class="landing"><div><p class="kicker">INTERNATIONAL STUDY · 2026</p><h1 id="title"></h1><h2 id="tagline"></h2><p id="intro"></p><p id="duration" class="meta"></p><button id="startButton"></button><small id="privacy"></small></div><div class="visual"><div class="mirror"></div><span>FROM REFLECTION<br>TO THE DAY AHEAD</span></div></section><section id="survey" class="hidden"><header><p id="sectionLabel" class="kicker"></p><p id="progressText"></p></header><div class="bar"><i id="progressBar"></i></div><form id="form"><article id="card"></article><div class="actions"><button type="button" id="backButton" class="light"></button><button type="button" id="nextButton"></button><button type="submit" id="submitButton" class="hidden"></button></div></form></section><section id="thanks" class="hidden thanks"><h1 id="thanksTitle"></h1><p id="thanksText"></p><button id="restartButton" class="light"></button></section><footer>THE MORNING PRESENCE STUDY · 2026</footer></main><script src="data.js"></script><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#171a18">
+  <meta name="description" content="The Morning Presence Study 2026 — an international anonymous study.">
+  <title>The Morning Presence Study 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <main class="shell">
+    <nav class="nav">
+      <b class="mark">MPS<span>/26</span></b>
+      <label class="language-control">
+        <span id="languageLabel"></span>
+        <select id="languageSelect" aria-label="Language">
+          <option value="fr">FR</option><option value="en">EN</option><option value="de">DE</option><option value="es">ES</option><option value="it">IT</option>
+        </select>
+      </label>
+    </nav>
+
+    <section id="landing" class="landing">
+      <div class="hero-copy">
+        <p class="kicker">INTERNATIONAL STUDY · 2026</p>
+        <h1 id="title"></h1>
+        <h2 id="tagline"></h2>
+        <p id="intro" class="intro"></p>
+        <div class="hero-bottom">
+          <button id="startButton" class="button primary"></button>
+          <p id="duration" class="meta"></p>
+        </div>
+        <small id="privacy" class="privacy"></small>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-number">01</div>
+        <div class="frame frame-one"></div>
+        <div class="frame frame-two"></div>
+        <div class="light-plane"></div>
+        <div class="threshold"></div>
+        <div class="art-caption"><span>MORNING</span><span>PRESENCE</span></div>
+      </div>
+    </section>
+
+    <section id="survey" class="hidden survey">
+      <div class="survey-top">
+        <p id="sectionLabel" class="kicker"></p>
+        <p id="progressText" class="progress-text"></p>
+      </div>
+      <div class="bar"><i id="progressBar"></i></div>
+      <form id="form" novalidate>
+        <article id="card"></article>
+        <div class="actions">
+          <button type="button" id="backButton" class="button secondary"></button>
+          <button type="button" id="nextButton" class="button primary"></button>
+          <button type="submit" id="submitButton" class="button primary hidden"></button>
+        </div>
+      </form>
+    </section>
+
+    <section id="thanks" class="hidden thanks">
+      <span class="thanks-index">15 / 15</span>
+      <h1 id="thanksTitle"></h1>
+      <p id="thanksText"></p>
+      <button id="restartButton" class="button secondary"></button>
+    </section>
+
+    <footer>
+      <span>THE MORNING PRESENCE STUDY</span>
+      <span>ANONYMOUS · INTERNATIONAL · 2026</span>
+    </footer>
+  </main>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
