@@ -1,23 +1,31 @@
-# Morning Presence Study V1
+# Morning Presence V4.1 — Questionnaire enrichi
 
-## Mise en ligne rapide
-1. Créez un Google Sheet vide.
-2. Extensions > Apps Script.
-3. Remplacez le contenu par `Code.gs`.
-4. Déployer > Nouveau déploiement > Application Web.
-5. Exécuter en tant que Moi ; accès Toute personne.
-6. Copiez l’URL `/exec`.
-7. Dans `app.js`, remplacez `PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE`.
-8. Publiez `index.html`, `styles.css`, `data.js` et `app.js` sur GitHub Pages, Cloudflare Pages ou Netlify.
+## Modifications
+- Ajout du genre après le pays
+- Ajout de l’usage actuel de produits pour paraître moins fatigué
+- Question conditionnelle sur le type de produit utilisé
+- Reformulation de la question sur le bénéfice principal
+- Progression automatiquement adaptée à la question conditionnelle
+- Design V4, devises locales, cinq langues, A/B test et Google Sheets conservés
 
-## Fonctionnalités
-- 5 langues ; sauvegarde lors du changement de langue.
-- A/B test automatique du concept.
-- Devise et fourchettes adaptées au pays.
-- Réponses anonymes centralisées dans Google Sheets.
+## Mise à jour GitHub recommandée
+Remplacez uniquement :
+- `data.js`
+- `app.js`
 
-## Avant diffusion
-- Faites 5 réponses tests sur mobile et ordinateur.
-- Vérifiez les données dans l’onglet Responses.
-- Faites relire les traductions DE/ES/IT par un locuteur natif.
-- Ajoutez une adresse de contact et une notice de confidentialité si nécessaire.
+Le design (`index.html` et `styles.css`) ne change pas.
+
+## Important pour app.js
+Le fichier fourni contient le placeholder :
+
+`PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE`
+
+Avant de l’envoyer sur GitHub, remettez votre URL Google Apps Script se terminant par `/exec`.
+
+## Test rapide
+1. Sélectionnez « Jamais » à la question sur l’usage de produits : la question sur les types de produits doit être ignorée.
+2. Sélectionnez « Occasionnellement » : la question conditionnelle doit apparaître.
+3. Envoyez une réponse et vérifiez les nouvelles colonnes dans Google Sheets :
+   - `gender`
+   - `product_use`
+   - `product_types`
