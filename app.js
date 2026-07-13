@@ -19,6 +19,19 @@ const priceMap = {
   other:{bands:["< 20","20–30","30–40","40–50","> 50"],currency:"LOCAL"}
 };
 
+
+function conditionMet(q){
+  if(!q.condition) return true;
+  const value = answers[q.condition.field];
+  if(Object.prototype.hasOwnProperty.call(q.condition, "equals")) return value === q.condition.equals;
+  if(Object.prototype.hasOwnProperty.call(q.condition, "notEquals")) return value !== q.condition.notEquals;
+  return true;
+}
+
+function activeQuestions(){
+  return QUESTIONS.filter(conditionMet);
+}
+
 function t(){ return I18N[language]; }
 function setText(id, value){ $(id).textContent = value; }
 function optionText(key){ return t().o[key] || key; }
@@ -82,13 +95,16 @@ function fieldHTML(q){
 }
 
 function saveCurrent(){
-  const q = QUESTIONS[step];
+  const q = activeQuestions()[step];
   const wrap = $("questionWrap");
   if(q.type === "checkbox"){
     answers[q.id] = [...wrap.querySelectorAll(`input[name="${q.id}"]:checked`)].map(el=>el.value);
   }else{
     const el = wrap.querySelector(`[name="${q.id}"]`);
     answers[q.id] = el ? el.value.trim() : "";
+  }
+  if(q.id === "product_use" && answers.product_use === "product_never"){
+    delete answers.product_types;
   }
   localStorage.setItem("mp_answers", JSON.stringify(answers));
 }
@@ -100,27 +116,29 @@ function valid(q){
 }
 
 function renderQuestion(error=false){
-  const q = QUESTIONS[step];
+  const active = activeQuestions();
+  if(step >= active.length) step = Math.max(0, active.length - 1);
+  const q = active[step];
   setText("chapterName", t().chapters[q.chapter]);
   setText("chapterLine", t().chapterLines[q.chapter]);
-  setText("progressTop", t().progress.replace("{current}", String(step+1).padStart(2,"0")).replace("{total}", QUESTIONS.length));
+  setText("progressTop", t().progress.replace("{current}", String(step+1).padStart(2,"0")).replace("{total}", active.length));
   const concept = q.id === "concept_interest" ? `<p class="concept-note">${variant==="A"?t().conceptA:t().conceptB}</p>` : "";
   $("questionWrap").innerHTML = `
-    <div class="question-number">${String(step+1).padStart(2,"0")} / ${QUESTIONS.length}</div>
+    <div class="question-number">${String(step+1).padStart(2,"0")} / ${active.length}</div>
     ${concept}
     <h2 class="question-title">${t().q[q.id]}</h2>
     ${fieldHTML(q)}
     ${error?`<p class="error">${t().required}</p>`:""}
   `;
   $("backButton").style.visibility = step===0 ? "hidden":"visible";
-  $("nextButton").classList.toggle("hidden", step===QUESTIONS.length-1);
-  $("submitButton").classList.toggle("hidden", step!==QUESTIONS.length-1);
+  $("nextButton").classList.toggle("hidden", step===active.length-1);
+  $("submitButton").classList.toggle("hidden", step!==active.length-1);
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
 $("nextButton").addEventListener("click", ()=>{
   saveCurrent();
-  if(!valid(QUESTIONS[step])) return renderQuestion(true);
+  if(!valid(activeQuestions()[step])) return renderQuestion(true);
   step++;
   renderQuestion();
 });
@@ -134,7 +152,7 @@ $("backButton").addEventListener("click", ()=>{
 $("surveyForm").addEventListener("submit", async e=>{
   e.preventDefault();
   saveCurrent();
-  if(!valid(QUESTIONS[step])) return renderQuestion(true);
+  if(!valid(activeQuestions()[step])) return renderQuestion(true);
 
   const currencyInfo = priceMap[answers.country || "other"];
   const payload = {
