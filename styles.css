@@ -1,3 +1,4 @@
+
 :root{
   --bg:#f2f1ec;
   --ink:#20211f;
@@ -97,4 +98,81 @@ textarea.field{min-height:180px;resize:vertical;line-height:1.6}
   .thanks-screen{grid-template-columns:1fr;padding:110px 22px 36px}
   .thanks-copy h2{font-size:62px}
   .thanks-mark{display:none}
+}
+
+
+/* V5 — research tracking and SurveyCircle completion */
+.response-id-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 16px;
+  align-items:center;
+  margin:28px 0;
+  font-size:11px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.response-id-row code{
+  font-family:"DM Sans",system-ui,sans-serif;
+  color:var(--ink);
+  letter-spacing:.08em;
+  text-transform:none;
+}
+.surveycircle-card{
+  max-width:620px;
+  margin:34px 0 42px;
+  padding:28px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.38);
+}
+.surveycircle-title{
+  margin:0 0 8px!important;
+  color:var(--ink)!important;
+  font-size:17px!important;
+  font-weight:600;
+}
+.surveycircle-text{
+  margin:0 0 22px!important;
+  font-size:14px!important;
+  line-height:1.55!important;
+}
+.surveycircle-code-row{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:center;
+  padding:15px 0;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.surveycircle-code-row code{
+  font-family:"DM Sans",system-ui,sans-serif;
+  font-size:16px;
+  letter-spacing:.09em;
+  color:var(--ink);
+}
+.copy-button{
+  border:0;
+  background:transparent;
+  padding:6px 0;
+  border-bottom:1px solid var(--ink);
+  color:var(--ink);
+  font-weight:600;
+  white-space:nowrap;
+}
+.surveycircle-link{
+  display:inline-block;
+  margin-top:18px;
+  color:var(--ink);
+  text-decoration:none;
+  border-bottom:1px solid var(--ink);
+  padding-bottom:5px;
+  font-size:13px;
+  font-weight:600;
+}
+.surveycircle-link::after{content:" ↗"}
+@media(max-width:600px){
+  .surveycircle-card{padding:22px 18px}
+  .surveycircle-code-row{align-items:flex-start;flex-direction:column}
 }
