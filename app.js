@@ -1,12 +1,39 @@
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbxq1yb4ISh0k5to_PUJS2RRZk9gp648A_KHL4KeKrqaazDRyAF0iP9xcE5zoKjhYQ91kg/exec";
+const QUESTIONNAIRE_VERSION = "V5.0";
+const SURVEYCIRCLE_CODE = "1R54-BPEP-QP2A-A879";
+const SURVEYCIRCLE_RETURN_URL = "https://www.surveycircle.com/";
+
 const $ = id => document.getElementById(id);
+
+const urlParams = new URLSearchParams(window.location.search);
+const initialTracking = {
+  traffic_source: urlParams.get("source") || urlParams.get("utm_source") || "direct",
+  utm_source: urlParams.get("utm_source") || "",
+  utm_medium: urlParams.get("utm_medium") || "",
+  utm_campaign: urlParams.get("utm_campaign") || "",
+  utm_content: urlParams.get("utm_content") || ""
+};
+
+let tracking = JSON.parse(localStorage.getItem("mp_tracking") || "null") || initialTracking;
+localStorage.setItem("mp_tracking", JSON.stringify(tracking));
 
 let language = localStorage.getItem("mp_language") || (navigator.language || "en").slice(0,2);
 if (!I18N[language]) language = "en";
+
 let step = 0;
 let answers = JSON.parse(localStorage.getItem("mp_answers") || "{}");
 let variant = localStorage.getItem("mp_variant") || (Math.random() < .5 ? "A" : "B");
 localStorage.setItem("mp_variant", variant);
+
+function createRespondentId(){
+  const existing = localStorage.getItem("mp_respondent_id");
+  if(existing) return existing;
+  const random = crypto.randomUUID().replaceAll("-", "").slice(0,10).toUpperCase();
+  const id = `MP-2026-${random}`;
+  localStorage.setItem("mp_respondent_id", id);
+  return id;
+}
+const respondentId = createRespondentId();
 
 const priceMap = {
   france:{bands:["< 20 €","20–30 €","30–40 €","40–50 €","> 50 €"],currency:"EUR"},
@@ -19,7 +46,6 @@ const priceMap = {
   other:{bands:["< 20","20–30","30–40","40–50","> 50"],currency:"LOCAL"}
 };
 
-
 function conditionMet(q){
   if(!q.condition) return true;
   const value = answers[q.condition.field];
@@ -27,14 +53,63 @@ function conditionMet(q){
   if(Object.prototype.hasOwnProperty.call(q.condition, "notEquals")) return value !== q.condition.notEquals;
   return true;
 }
-
-function activeQuestions(){
-  return QUESTIONS.filter(conditionMet);
-}
-
+function activeQuestions(){ return QUESTIONS.filter(conditionMet); }
 function t(){ return I18N[language]; }
 function setText(id, value){ $(id).textContent = value; }
 function optionText(key){ return t().o[key] || key; }
+
+function browserFamily(){
+  const ua = navigator.userAgent;
+  if(ua.includes("Firefox")) return "Firefox";
+  if(ua.includes("Edg/")) return "Edge";
+  if(ua.includes("Chrome")) return "Chrome";
+  if(ua.includes("Safari")) return "Safari";
+  return "Other";
+}
+
+function deviceType(){
+  if(/iPad|Tablet/i.test(navigator.userAgent)) return "tablet";
+  return /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop";
+}
+
+function commonMetadata(){
+  return {
+    respondent_id: respondentId,
+    questionnaire_version: QUESTIONNAIRE_VERSION,
+    study_language: language,
+    concept_variant: variant,
+    traffic_source: tracking.traffic_source,
+    utm_source: tracking.utm_source,
+    utm_medium: tracking.utm_medium,
+    utm_campaign: tracking.utm_campaign,
+    utm_content: tracking.utm_content,
+    device_type: deviceType(),
+    browser_family: browserFamily(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    page_url: window.location.href
+  };
+}
+
+async function sendEvent(eventType, extra={}){
+  if(ENDPOINT.startsWith("PASTE_")) return;
+  const payload = {
+    event_type: eventType,
+    event_at: new Date().toISOString(),
+    ...commonMetadata(),
+    ...extra
+  };
+  const body = new URLSearchParams();
+  body.set("payload", JSON.stringify(payload));
+  try{
+    await fetch(ENDPOINT, {
+      method:"POST",
+      mode:"no-cors",
+      keepalive:true,
+      headers:{"Content-Type":"application/x-www-form-urlencoded"},
+      body
+    });
+  }catch(_){}
+}
 
 function hydrate(){
   document.documentElement.lang = language;
@@ -52,7 +127,15 @@ function hydrate(){
   setText("thanksTitle", t().thanks_title);
   setText("thanksText", t().thanks_text);
   setText("restartButton", t().restart);
-  if (!$("surveyScreen").classList.contains("hidden")) renderQuestion();
+
+  setText("respondentLabel", t().respondent_label);
+  setText("respondentDisplay", respondentId);
+  setText("surveyCircleTitle", t().sc_title);
+  setText("surveyCircleText", t().sc_text);
+  setText("copySurveyCircleCode", t().sc_copy);
+  setText("surveyCircleReturn", t().sc_return);
+
+  if(!$("surveyScreen").classList.contains("hidden")) renderQuestion();
 }
 
 $("languageSelect").addEventListener("change", e => {
@@ -66,6 +149,7 @@ $("beginButton").addEventListener("click", () => {
   $("surveyScreen").classList.remove("hidden");
   $("progressTop").classList.remove("hidden");
   renderQuestion();
+  sendEvent("survey_started", {active_question_count:activeQuestions().length});
   window.scrollTo({top:0,behavior:"smooth"});
 });
 
@@ -119,26 +203,46 @@ function renderQuestion(error=false){
   const active = activeQuestions();
   if(step >= active.length) step = Math.max(0, active.length - 1);
   const q = active[step];
+
   setText("chapterName", t().chapters[q.chapter]);
   setText("chapterLine", t().chapterLines[q.chapter]);
-  setText("progressTop", t().progress.replace("{current}", String(step+1).padStart(2,"0")).replace("{total}", active.length));
-  const concept = q.id === "concept_interest" ? `<p class="concept-note">${variant==="A"?t().conceptA:t().conceptB}</p>` : "";
+  setText("progressTop", t().progress
+    .replace("{current}", String(step+1).padStart(2,"0"))
+    .replace("{total}", active.length));
+
+  const concept = q.id === "concept_interest"
+    ? `<p class="concept-note">${variant==="A" ? t().conceptA : t().conceptB}</p>`
+    : "";
+
   $("questionWrap").innerHTML = `
     <div class="question-number">${String(step+1).padStart(2,"0")} / ${active.length}</div>
     ${concept}
     <h2 class="question-title">${t().q[q.id]}</h2>
     ${fieldHTML(q)}
-    ${error?`<p class="error">${t().required}</p>`:""}
+    ${error ? `<p class="error">${t().required}</p>` : ""}
   `;
+
   $("backButton").style.visibility = step===0 ? "hidden":"visible";
   $("nextButton").classList.toggle("hidden", step===active.length-1);
   $("submitButton").classList.toggle("hidden", step!==active.length-1);
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
+function maybeSendMilestone(){
+  const current = step + 1;
+  if([5,10,15].includes(current)){
+    sendEvent("survey_progress", {
+      question_number: current,
+      question_id: activeQuestions()[step]?.id || "",
+      answers_count: Object.keys(answers).length
+    });
+  }
+}
+
 $("nextButton").addEventListener("click", ()=>{
   saveCurrent();
   if(!valid(activeQuestions()[step])) return renderQuestion(true);
+  maybeSendMilestone();
   step++;
   renderQuestion();
 });
@@ -149,32 +253,62 @@ $("backButton").addEventListener("click", ()=>{
   renderQuestion();
 });
 
+$("copySurveyCircleCode").addEventListener("click", async ()=>{
+  try{
+    await navigator.clipboard.writeText(SURVEYCIRCLE_CODE);
+  }catch(_){
+    const temp = document.createElement("textarea");
+    temp.value = SURVEYCIRCLE_CODE;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    temp.remove();
+  }
+  $("copySurveyCircleCode").textContent = t().sc_copied;
+  setTimeout(()=> $("copySurveyCircleCode").textContent = t().sc_copy, 1800);
+});
+
+$("surveyCircleReturn").href = SURVEYCIRCLE_RETURN_URL;
+
 $("surveyForm").addEventListener("submit", async e=>{
   e.preventDefault();
   saveCurrent();
   if(!valid(activeQuestions()[step])) return renderQuestion(true);
 
-  const currencyInfo = priceMap[answers.country || "other"];
+  const currencyInfo = priceMap[answers.country || "other"] || priceMap.other;
   const payload = {
+    event_type:"survey_completed",
+    submitted_at:new Date().toISOString(),
     ...answers,
-    study_language: language,
-    concept_variant: variant,
-    price_display_currency: currencyInfo.currency,
-    submitted_at: new Date().toISOString(),
-    respondent_id: localStorage.getItem("mp_respondent_id") || crypto.randomUUID(),
-    device_type: /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop"
+    ...commonMetadata(),
+    price_display_currency:currencyInfo.currency,
+    active_question_count:activeQuestions().length
   };
-  localStorage.setItem("mp_respondent_id", payload.respondent_id);
+
   $("submitButton").disabled = true;
 
   try{
     if(ENDPOINT.startsWith("PASTE_")) throw new Error("Endpoint missing");
     const body = new URLSearchParams();
     body.set("payload", JSON.stringify(payload));
-    await fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
+    await fetch(ENDPOINT,{
+      method:"POST",
+      mode:"no-cors",
+      keepalive:true,
+      headers:{"Content-Type":"application/x-www-form-urlencoded"},
+      body
+    });
+
     $("surveyScreen").classList.add("hidden");
     $("progressTop").classList.add("hidden");
     $("thanksScreen").classList.remove("hidden");
+
+    const isSurveyCircle = (
+      tracking.traffic_source.toLowerCase().includes("surveycircle") ||
+      tracking.utm_source.toLowerCase().includes("surveycircle")
+    );
+    $("surveyCircleCard").classList.toggle("hidden", !isSurveyCircle);
+
     localStorage.removeItem("mp_answers");
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(err){
@@ -190,6 +324,7 @@ $("restartButton").addEventListener("click", ()=>{
   localStorage.setItem("mp_variant",variant);
   localStorage.removeItem("mp_answers");
   $("thanksScreen").classList.add("hidden");
+  $("surveyCircleCard").classList.add("hidden");
   $("hero").classList.remove("hidden");
   window.scrollTo({top:0,behavior:"smooth"});
 });
